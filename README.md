@@ -13,7 +13,7 @@ Start/Stop two wire control Generators from one wire input
 ## GenSet Start:
 1. Send a 'Stop' signal for 10 seconds to prime fuel to the GenSet.
 2. Wait for 4 seconds.
-3. Send a 'Start' signal for 20 seconds
+3. Send a 'Start' signal for 20 seconds or until GenSet Running input active.
 4. If the GenSet is -not- running, wait for 2 minutes and retry up to 3 total times.
 5. If the GenSet starts, but does not remain running for 20 seconds, fall back to step 4.
 

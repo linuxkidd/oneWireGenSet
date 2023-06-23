@@ -26,14 +26,18 @@
  * to help troubleshoot logic issues.
  */
 
-// #define DEBUG
+#define DEBUG
 
-const unsigned int GEN_STOP_PIN       = 9;
-const unsigned int GEN_START_PIN      = 8;
-const unsigned int GEN_RUN_SENSE_PIN  = 7;
-const unsigned int GEN_RUN_DEMAND_PIN = 6;
+const unsigned int GEN_STOP_PIN        = 9;
+const unsigned int GEN_START_PIN       = 8;
+const unsigned int GEN_RUN_SENSE_PIN   = 7;
+const unsigned int GEN_RUN_DEMAND_PIN  = 6;
 
-const unsigned int START_MAX_TRIES    = 3;
+const unsigned int START_MAX_TRIES        = 3;
+const unsigned int RUN_DEBOUNCE_MILLIS    = 1000;
+const unsigned int DEMAND_DEBOUNCE_MILLIS = 750;
+// RUN_DEBOUNCE_MILLIS    == how long the 'run' input must be active before considering the GenSet as running.
+// DEMAND_DEBOUNCE_MILLIS == how long the 'demand' input must be active before triggering the GenSet start sequence.
 
 /* ############################################
  *   Variables below this point are used 
@@ -74,6 +78,8 @@ void checkGenState();
 
 typedef struct {
   boolean runDemand        = false;
+  unsigned long runDemand_millis = 0;
+
   boolean isRunning        = false;
   unsigned long isRunning_millis = 0;
   
@@ -151,12 +157,14 @@ void readPins() {
   if(digitalRead(GEN_RUN_SENSE_PIN) == INPUT_ACTIVE)
   {
     if(gen.isRunning_millis != 0) {
-      if(!gen.isRunning && ( millis() - gen.isRunning_millis > 750 )) {
+      if(!gen.isRunning && ( millis() - gen.isRunning_millis > RUN_DEBOUNCE_MILLIS )) 
+      {
         gen.isRunning = true;
         gen.isRunning_millis = 0;
         sendReport();
       }
-    } else
+    }
+    else
       gen.isRunning_millis = millis();
   }
   else
@@ -171,12 +179,17 @@ void readPins() {
 
   if(digitalRead(GEN_RUN_DEMAND_PIN) == INPUT_ACTIVE) 
   {
-    if(!gen.runDemand)
+    if(gen.runDemand_millis != 0) 
     {
-      gen.runDemand=true;
-      startGen();
-      sendReport();
+      if(!gen.runDemand && ( millis() - gen.runDemand_millis > DEMAND_DEBOUNCE_MILLIS))
+      {
+        gen.runDemand=true;
+        startGen();
+        sendReport();
+      }
     }
+    else
+      gen.runDemand_millis = millis();
   }
   else
   {
@@ -287,18 +300,11 @@ void checkGenState() {
       {
         if( digitalRead(GEN_START_PIN) == RELAY_ON )
         {
-          if(millis() - gen.startStep_millis > START_STEP_MILLIS[gen.startStep])
-          {
-            /*
-              The 'gen.isRunning' property can bounce multiple times during a start attempt.
-              Thus, keep applying the 'Start' output (step 3) until the start timer expires.
-            */
-            digitalWrite(GEN_STOP_PIN , RELAY_OFF);
-            digitalWrite(GEN_START_PIN, RELAY_OFF);
-            gen.startFailed      = false;
-            gen.startStep        = 5;
-            gen.startStep_millis = millis();
-          } // Start apparently complete
+          digitalWrite(GEN_STOP_PIN , RELAY_OFF);
+          digitalWrite(GEN_START_PIN, RELAY_OFF);
+          gen.startFailed      = false;
+          gen.startStep        = 5;
+          gen.startStep_millis = millis();
         } // digitalRead(GEN_START_PIN) == RELAY_ON
         else if(gen.startStep == 5)
         { 
