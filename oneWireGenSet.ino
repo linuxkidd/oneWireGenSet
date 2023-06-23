@@ -26,7 +26,7 @@
  * to help troubleshoot logic issues.
  */
 
-#define DEBUG
+// #define DEBUG
 
 const unsigned int GEN_STOP_PIN        = 9;
 const unsigned int GEN_START_PIN       = 8;
