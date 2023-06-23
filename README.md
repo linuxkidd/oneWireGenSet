@@ -20,6 +20,7 @@ Start/Stop two wire control Generators from one wire input
 ## GenSet Stop:
 1. Send a 'Stop' signal for 10 seconds
 
+## Customization:
 - The Start timing and steps can be adjusted if desired via the `START_STEP_MILLIS`, and `START_STEPS` constants toward the top of the code.
 - The Stop timing can be adjusted using the `STOP_MILLIS` constant toward the top of the code.
 
